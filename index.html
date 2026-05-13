@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>打倒強化人</title>
+  <style>
+    :root {
+      --bg: #08070f;
+      --card: rgba(9, 11, 24, 0.86);
+      --text: #d9f6ff;
+      --muted: #89adc7;
+      --accent: #00e5ff;
+      --accent-2: #ff39d4;
+      --good: #4cffc6;
+      --danger: #ff5d9c;
+      --arena-top: #05050a;
+      --arena-bottom: #020206;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(0, 229, 255, 0.16), transparent 42%),
+        radial-gradient(circle at 85% 20%, rgba(255, 57, 212, 0.14), transparent 38%),
+        linear-gradient(180deg, #090914 0%, var(--bg) 72%);
+      color: var(--text);
+      padding: 16px;
+    }
+
+    .wrap {
+      width: min(92vw, 680px);
+      background: var(--card);
+      border: 1px solid rgba(0, 229, 255, 0.36);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow:
+        0 0 0 1px rgba(255, 57, 212, 0.22) inset,
+        0 18px 40px rgba(0, 0, 0, 0.45),
+        0 0 28px rgba(0, 229, 255, 0.2);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.42rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #d8ffff;
+      text-shadow: 0 0 6px rgba(0, 229, 255, 0.7), 0 0 18px rgba(255, 57, 212, 0.4);
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .hud {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .stat {
+      background: rgba(15, 19, 35, 0.78);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+      border: 1px solid rgba(137, 173, 199, 0.28);
+      box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.12) inset;
+    }
+
+    .stat .label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-bottom: 2px;
+    }
+
+    .stat .value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #c9f8ff;
+      text-shadow: 0 0 10px rgba(0, 229, 255, 0.25);
+    }
+
+    #arena {
+      margin-top: 16px;
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/10;
+      background:
+        linear-gradient(165deg, var(--arena-top), var(--arena-bottom));
+      border: 2px solid rgba(0, 229, 255, 0.34);
+      border-radius: 12px;
+      overflow: hidden;
+      user-select: none;
+      box-shadow:
+        0 0 0 1px rgba(255, 57, 212, 0.24) inset,
+        0 0 18px rgba(0, 229, 255, 0.2);
+    }
+
+    #arena::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(
+          to right,
+          rgba(0, 229, 255, 0.09) 0 1px,
+          transparent 1px 28px
+        ),
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255, 57, 212, 0.08) 0 1px,
+          transparent 1px 28px
+        );
+      opacity: 0.32;
+    }
+
+    #arena::after {
+      content: "";
+      position: absolute;
+      inset: -120% 0 0 0;
+      pointer-events: none;
+      background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 229, 255, 0.22) 48%,
+        rgba(255, 57, 212, 0.16) 52%,
+        rgba(0, 0, 0, 0) 100%
+      );
+      mix-blend-mode: screen;
+      animation: scanline 3.2s linear infinite;
+    }
+
+    #status {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted);
+      pointer-events: none;
+      padding: 12px;
+      text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+    }
+
+    #target {
+      position: absolute;
+      width: 56px;
+      height: 74px;
+      border: none;
+      padding: 0;
+      background-color: transparent;
+      background-image: url("file:///C:/Users/lenneth.chen/.cursor/projects/c-Users-lenneth-chen-Documents-Cursor/assets/c__Users_lenneth.chen_AppData_Roaming_Cursor_User_workspaceStorage_29e07aee267f4ed65cf035b84cc889cc_images_IMG_9446-52eff79d-3fb9-4475-a545-5fa7489df0f5.png");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.18)) drop-shadow(0 4px 4px rgba(0, 0, 0, 0.35));
+      cursor: pointer;
+      display: none;
+    }
+
+    #target:hover {
+      transform: scale(1.08);
+    }
+
+    #target.hit {
+      animation: zap 0.32s ease-out;
+    }
+
+    #target.glitch {
+      animation: zap 0.32s ease-out, glitch 0.22s steps(2, end) 2;
+    }
+
+    #target.hit::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 22px;
+      height: 84px;
+      transform: translate(-50%, -62%);
+      pointer-events: none;
+      background: linear-gradient(180deg, #fefff2 0%, #9af8ff 45%, #00d9ff 100%);
+      clip-path: polygon(
+        46% 0%,
+        74% 0%,
+        56% 34%,
+        86% 34%,
+        33% 100%,
+        45% 58%,
+        18% 58%
+      );
+      filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.95));
+      opacity: 0.98;
+    }
+
+    #target.hit::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 72px;
+      height: 72px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      background: radial-gradient(circle, rgba(127, 248, 255, 0.58) 0%, rgba(127, 248, 255, 0) 65%);
+      filter: blur(1px);
+    }
+
+    @keyframes zap {
+      0% {
+        transform: scale(1);
+        filter: brightness(1);
+      }
+      30% {
+        transform: scale(1.16);
+        filter: brightness(1.62);
+      }
+      55% {
+        transform: scale(1.08);
+        filter: brightness(1.3);
+      }
+      100% {
+        transform: scale(1);
+        filter: brightness(1);
+      }
+    }
+
+    @keyframes scanline {
+      0% { transform: translateY(0%); }
+      100% { transform: translateY(220%); }
+    }
+
+    @keyframes glitch {
+      0% {
+        transform: translate(0, 0);
+        filter: brightness(1) contrast(1);
+      }
+      25% {
+        transform: translate(-2px, 1px);
+        filter: brightness(1.35) contrast(1.25) hue-rotate(10deg);
+      }
+      50% {
+        transform: translate(2px, -1px);
+        filter: brightness(1.2) contrast(1.35) hue-rotate(-10deg);
+      }
+      75% {
+        transform: translate(-1px, 1px);
+        filter: brightness(1.4) contrast(1.2);
+      }
+      100% {
+        transform: translate(0, 0);
+        filter: brightness(1) contrast(1);
+      }
+    }
+
+    .actions {
+      margin-top: 14px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.92rem;
+      font-family: inherit;
+      cursor: pointer;
+      color: #fff;
+    }
+
+    #startBtn {
+      background: linear-gradient(90deg, var(--accent), #36ffd6);
+      color: #02161d;
+      font-weight: 700;
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.45);
+    }
+
+    #resetBtn {
+      background: linear-gradient(90deg, #39144f, var(--accent-2));
+      color: #fff;
+      box-shadow: 0 0 14px rgba(255, 57, 212, 0.35);
+    }
+
+    .actions button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.08);
+    }
+
+    .ok { color: var(--good); }
+    .err { color: var(--danger); }
+
+    @media (max-width: 640px) {
+      .hud { grid-template-columns: repeat(2, 1fr); }
+      #target { width: 46px; height: 62px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>打倒強化人</h1>
+    <p>按下開始後，強化人會在場地裡隨機出現。快速點擊 10 次，測你的平均反應時間。</p>
+
+    <section class="hud">
+      <div class="stat"><span class="label">回合</span><span id="round" class="value">0 / 10</span></div>
+      <div class="stat"><span class="label">上次反應</span><span id="last" class="value">-</span></div>
+      <div class="stat"><span class="label">平均反應</span><span id="avg" class="value">-</span></div>
+      <div class="stat"><span class="label">誤點</span><span id="miss" class="value">0</span></div>
+    </section>
+
+    <section id="arena" aria-label="反應遊戲區">
+      <div id="status">按「開始」準備挑戰</div>
+      <button id="target" type="button" aria-label="目標強化人"></button>
+    </section>
+
+    <div class="actions">
+      <button id="startBtn" type="button">開始遊戲</button>
+      <button id="resetBtn" type="button">重設</button>
+    </div>
+  </main>
+
+  <script>
+    const TOTAL_ROUNDS = 10;
+    const MIN_DELAY = 700;
+    const MAX_DELAY = 1500;
+
+    const arena = document.getElementById("arena");
+    const target = document.getElementById("target");
+    const statusEl = document.getElementById("status");
+    const roundEl = document.getElementById("round");
+    const lastEl = document.getElementById("last");
+    const avgEl = document.getElementById("avg");
+    const missEl = document.getElementById("miss");
+    const startBtn = document.getElementById("startBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    let round = 0;
+    let misses = 0;
+    let running = false;
+    let waitingTarget = false;
+    let showTimer = null;
+    let shownAt = 0;
+    const reactions = [];
+
+    function rand(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function setStatus(text, cls = "") {
+      statusEl.className = cls;
+      statusEl.textContent = text;
+    }
+
+    function updateHUD() {
+      roundEl.textContent = `${round} / ${TOTAL_ROUNDS}`;
+      missEl.textContent = String(misses);
+      if (reactions.length === 0) {
+        lastEl.textContent = "-";
+        avgEl.textContent = "-";
+        return;
+      }
+      const last = reactions[reactions.length - 1];
+      const avg = Math.round(reactions.reduce((a, b) => a + b, 0) / reactions.length);
+      lastEl.textContent = `${last} ms`;
+      avgEl.textContent = `${avg} ms`;
+    }
+
+    function hideTarget() {
+      target.style.display = "none";
+      waitingTarget = false;
+    }
+
+    function placeTarget() {
+      const area = arena.getBoundingClientRect();
+      const t = target.getBoundingClientRect();
+      const pad = 8;
+      const maxX = area.width - t.width - pad;
+      const maxY = area.height - t.height - pad;
+      const x = rand(pad, Math.max(pad, Math.floor(maxX)));
+      const y = rand(pad, Math.max(pad, Math.floor(maxY)));
+      target.style.left = `${x}px`;
+      target.style.top = `${y}px`;
+      target.style.display = "block";
+      shownAt = performance.now();
+      waitingTarget = true;
+      setStatus("快點擊強化人！", "ok");
+    }
+
+    function scheduleNextTarget() {
+      hideTarget();
+      const delay = rand(MIN_DELAY, MAX_DELAY);
+      setStatus("準備中...", "");
+      showTimer = setTimeout(placeTarget, delay);
+    }
+
+    function finishGame() {
+      running = false;
+      waitingTarget = false;
+      clearTimeout(showTimer);
+      hideTarget();
+      startBtn.disabled = false;
+      const avg = Math.round(reactions.reduce((a, b) => a + b, 0) / reactions.length);
+      setStatus(`完成！平均 ${avg} ms，誤點 ${misses} 次`, "ok");
+    }
+
+    function startGame() {
+      running = true;
+      round = 0;
+      misses = 0;
+      reactions.length = 0;
+      startBtn.disabled = true;
+      updateHUD();
+      scheduleNextTarget();
+    }
+
+    function resetGame() {
+      running = false;
+      waitingTarget = false;
+      clearTimeout(showTimer);
+      hideTarget();
+      round = 0;
+      misses = 0;
+      reactions.length = 0;
+      startBtn.disabled = false;
+      updateHUD();
+      setStatus("按「開始」準備挑戰", "");
+    }
+
+    target.addEventListener("click", () => {
+      if (!running || !waitingTarget) return;
+      waitingTarget = false;
+      target.classList.add("hit");
+      target.classList.add("glitch");
+      setTimeout(() => {
+        target.classList.remove("hit");
+        target.classList.remove("glitch");
+      }, 280);
+      const reaction = Math.round(performance.now() - shownAt);
+      reactions.push(reaction);
+      round += 1;
+      updateHUD();
+      if (round >= TOTAL_ROUNDS) {
+        setTimeout(finishGame, 260);
+      } else {
+        setTimeout(scheduleNextTarget, 260);
+      }
+    });
+
+    arena.addEventListener("click", (event) => {
+      if (!running || !waitingTarget) return;
+      if (event.target === target) return;
+      misses += 1;
+      updateHUD();
+      setStatus("誤點了！等強化人出現再點。", "err");
+    });
+
+    startBtn.addEventListener("click", startGame);
+    resetBtn.addEventListener("click", resetGame);
+    updateHUD();
+  </script>
+</body>
+</html>
